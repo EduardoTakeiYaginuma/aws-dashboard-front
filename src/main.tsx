@@ -8,6 +8,7 @@ import WorkspaceRecommendations from './pages/WorkspaceRecommendations';
 import RecommendationDetail from './pages/RecommendationDetail';
 import WorkspaceResources from './pages/WorkspaceResources';
 import InfrastructureDiagram from './pages/InfrastructureDiagram';
+import WorkspaceExplorer from './pages/WorkspaceExplorer';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/workspaces/:id/recommendations" element={<WorkspaceRecommendations />} />
             <Route path="/workspaces/:id/resources" element={<WorkspaceResources />} />
             <Route path="/workspaces/:id/diagram" element={<InfrastructureDiagram />} />
+            <Route path="/workspaces/:id/explorer" element={<WorkspaceExplorer />} />
             <Route path="/recommendations/:id" element={<RecommendationDetail />} />
           </Routes>
         </div>
