@@ -61,6 +61,7 @@ export interface Resource {
   id: string;
   workspaceId: string;
   resourceId: string;
+  arn?: string;
   service: string;
   type: string;
   name: string;
@@ -68,6 +69,15 @@ export interface Resource {
   state: string;
   lastSeenAt: string;
   estimatedMonthlyCost: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface SyncResult {
+  status: string;
+  message: string;
+  total: number;
+  byService: Record<string, number>;
+  errors: string[];
 }
 
 export interface InventoryResponse {
@@ -143,4 +153,7 @@ export const api = {
 
   getCostsSummary: (workspaceId: string) =>
     request<CostsSummary>(`/costs/summary?workspaceId=${workspaceId}`),
+
+  syncResources: (workspaceId: string) =>
+    request<SyncResult>(`/workspaces/${workspaceId}/sync`, { method: 'POST' }),
 };
