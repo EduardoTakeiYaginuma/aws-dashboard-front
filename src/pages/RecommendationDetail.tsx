@@ -7,6 +7,12 @@ const TYPE_LABELS: Record<string, string> = {
   EBS_ORPHAN: 'EBS Orphaned Volume',
   S3_LIFECYCLE: 'S3 Lifecycle Optimization',
   RDS_DOWN_SIZE: 'RDS Instance Downsizing',
+  LAMBDA_UNUSED: 'Lambda Unused Function',
+  LAMBDA_OVERSIZED: 'Lambda Oversized Memory',
+  ELB_NO_TARGETS: 'Load Balancer Without Targets',
+  ELB_NO_TRAFFIC: 'Load Balancer Without Traffic',
+  EIP_UNASSOCIATED: 'Elastic IP Unassociated',
+  NAT_GW_IDLE: 'NAT Gateway Idle',
 };
 
 export default function RecommendationDetail() {

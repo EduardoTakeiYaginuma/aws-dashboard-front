@@ -33,6 +33,19 @@ const SERVICE_ORDER = [
   'VPC', 'Route53', 'SNS', 'SQS', 'IAM', 'CloudFormation',
 ];
 
+const REC_TYPE_LABELS: Record<string, string> = {
+  EC2_DOWN_SIZE: 'EC2 Downsize',
+  EBS_ORPHAN: 'EBS Orphaned',
+  S3_LIFECYCLE: 'S3 Lifecycle',
+  RDS_DOWN_SIZE: 'RDS Downsize',
+  LAMBDA_UNUSED: 'Lambda Unused',
+  LAMBDA_OVERSIZED: 'Lambda Oversized',
+  ELB_NO_TARGETS: 'ELB No Targets',
+  ELB_NO_TRAFFIC: 'ELB No Traffic',
+  EIP_UNASSOCIATED: 'EIP Unassociated',
+  NAT_GW_IDLE: 'NAT GW Idle',
+};
+
 const COST_COLORS = [
   '#4361ee', '#f72585', '#4cc9f0', '#f77f00', '#7209b7',
   '#3a86a8', '#06d6a0', '#e63946', '#457b9d', '#8338ec',
@@ -43,7 +56,7 @@ const COST_COLORS = [
 function StateBadge({ state }: { state: string }) {
   const color =
     ['running','active','available','in-use','Active','Ready','associated','connected'].includes(state) ? '#16a34a'
-    : ['stopped','disabled','inactive','not-found','error','terminated'].includes(state) ? '#dc2626'
+    : ['stopped','disabled','inactive','not-found','error','terminated','unassociated'].includes(state) ? '#dc2626'
     : ['pending','creating','Updating','Launching'].includes(state) ? '#ca8a04'
     : '#6b7280';
   return (
@@ -302,7 +315,7 @@ function RecommendationsSection({ recs }: { recs: RecommendationsResponse | null
           <tbody>
             {activeRecs.slice(0, 10).map(r => (
               <tr key={r.id}>
-                <td><span className="badge badge-new">{r.type.replace(/_/g, ' ')}</span></td>
+                <td><span className="badge badge-new">{REC_TYPE_LABELS[r.type] || r.type.replace(/_/g, ' ')}</span></td>
                 <td><code style={{ fontSize: '0.75rem' }}>{r.resourceId}</code></td>
                 <td style={{ fontSize: '0.85rem', maxWidth: '300px' }}>{r.description}</td>
                 <td style={{ fontWeight: 600, color: '#059669' }}>${r.estimatedMonthlySavings.toFixed(2)}</td>
@@ -700,7 +713,7 @@ export default function ClientDashboard() {
                     <tbody>
                       {recs.recommendations.map(r => (
                         <tr key={r.id}>
-                          <td><span className="badge badge-new" style={{ fontSize: '0.68rem' }}>{r.type.replace(/_/g, ' ')}</span></td>
+                          <td><span className="badge badge-new" style={{ fontSize: '0.68rem' }}>{REC_TYPE_LABELS[r.type] || r.type.replace(/_/g, ' ')}</span></td>
                           <td><code style={{ fontSize: '0.72rem' }}>{r.resourceId}</code></td>
                           <td style={{ fontSize: '0.82rem', maxWidth: '320px' }}>{r.description}</td>
                           <td style={{ fontWeight: 600, color: '#059669' }}>${r.estimatedMonthlySavings.toFixed(2)}</td>

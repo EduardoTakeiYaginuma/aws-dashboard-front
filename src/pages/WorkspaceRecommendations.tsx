@@ -7,6 +7,12 @@ const TYPE_LABELS: Record<string, string> = {
   EBS_ORPHAN: 'EBS Orphaned',
   S3_LIFECYCLE: 'S3 Lifecycle',
   RDS_DOWN_SIZE: 'RDS Downsize',
+  LAMBDA_UNUSED: 'Lambda Unused',
+  LAMBDA_OVERSIZED: 'Lambda Oversized',
+  ELB_NO_TARGETS: 'ELB No Targets',
+  ELB_NO_TRAFFIC: 'ELB No Traffic',
+  EIP_UNASSOCIATED: 'EIP Unassociated',
+  NAT_GW_IDLE: 'NAT GW Idle',
 };
 
 export default function WorkspaceRecommendations() {
