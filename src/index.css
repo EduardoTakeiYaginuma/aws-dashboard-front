@@ -709,6 +709,170 @@ tr:hover {
   transition: width 0.4s ease;
 }
 
+/* Clickable service cards with enhanced hover */
+.service-card-clickable {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.service-card-clickable::after {
+  content: '→';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.service-card-clickable:hover::after {
+  transform: translateX(4px);
+  color: #4361ee;
+}
+.service-card-clickable:hover {
+  border-color: #4361ee;
+  box-shadow: 0 6px 20px rgba(67, 97, 238, 0.15);
+}
+
+/* ==========================================
+   SERVICE NAVIGATION CARDS (Browse by Service)
+   ========================================== */
+
+.service-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.service-nav-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  cursor: pointer;
+  position: relative;
+  border: 2px solid #e5e7eb;
+  transition: all 0.2s ease;
+  animation: fadeInUp 0.3s ease both;
+}
+
+.service-nav-card:hover {
+  border-color: var(--service-color, #4361ee);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+.service-nav-card:hover .service-nav-arrow {
+  transform: translateX(4px);
+  opacity: 1;
+}
+
+.service-nav-card:hover .service-nav-cta {
+  color: var(--service-color, #4361ee);
+}
+
+.service-nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.service-nav-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.service-nav-arrow {
+  font-size: 1.25rem;
+  color: #9ca3af;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+
+.service-nav-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.5rem;
+}
+
+.service-nav-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.service-nav-count {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.service-nav-issues {
+  font-size: 0.75rem;
+  color: #ef4444;
+  background: #fef2f2;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.service-nav-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.service-nav-health {
+  flex: 1;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.service-nav-health-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.service-nav-cost {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #059669;
+  white-space: nowrap;
+}
+
+.service-nav-cta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #9ca3af;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.service-nav-cta::after {
+  content: '→';
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .service-nav-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ==========================================
    CHART CENTER LABEL (for donut charts)
    ========================================== */

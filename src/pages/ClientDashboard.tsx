@@ -427,9 +427,490 @@ function SavingsBanner({ recs, onViewRecs }: { recs: RecommendationsResponse; on
   );
 }
 
-// ─── Section: Resources Dashboard Header ──────────────────────────────
+// ─── Service-specific Table Components ────────────────────────────────
 
-function ResourcesDashboardHeader({ resources, costs }: { resources: Resource[]; costs: CostData | null }) {
+function EC2Table({ resources, onSelect, maxCost }: { resources: Resource[]; onSelect: (r: Resource) => void; maxCost: number }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Instance ID</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>State</th>
+          <th>AZ</th>
+          <th>Private IP</th>
+          <th>Cost/mo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {resources.map(r => {
+          const meta = (r.metadata || {}) as Record<string, unknown>;
+          return (
+            <tr key={r.id} className="table-row-interactive" onClick={() => onSelect(r)}>
+              <td><code style={{ fontSize: '0.75rem' }}>{r.resourceId}</code></td>
+              <td style={{ fontWeight: 500 }}>{r.name}</td>
+              <td><code style={{ fontSize: '0.75rem', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>{r.type}</code></td>
+              <td><StateBadge state={r.state} /></td>
+              <td style={{ fontSize: '0.8rem', color: '#6b7280' }}>{meta.availabilityZone as string || '—'}</td>
+              <td><code style={{ fontSize: '0.75rem' }}>{meta.privateIp as string || '—'}</code></td>
+              <td>
+                {r.estimatedMonthlyCost > 0 ? (
+                  <div className="cost-bar-inline">
+                    <div className="cost-bar-inline-track">
+                      <div className="cost-bar-inline-fill" style={{ width: `${(r.estimatedMonthlyCost / maxCost) * 100}%` }} />
+                    </div>
+                    <span className="cost-bar-inline-value">${r.estimatedMonthlyCost.toFixed(2)}</span>
+                  </div>
+                ) : <span style={{ color: '#d1d5db' }}>—</span>}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function EBSTable({ resources, onSelect, maxCost }: { resources: Resource[]; onSelect: (r: Resource) => void; maxCost: number }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Volume ID</th>
+          <th>Name</th>
+          <th>Size</th>
+          <th>Type</th>
+          <th>State</th>
+          <th>Attached To</th>
+          <th>Encrypted</th>
+          <th>Cost/mo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {resources.map(r => {
+          const meta = (r.metadata || {}) as Record<string, unknown>;
+          return (
+            <tr key={r.id} className="table-row-interactive" onClick={() => onSelect(r)}>
+              <td><code style={{ fontSize: '0.75rem' }}>{r.resourceId}</code></td>
+              <td style={{ fontWeight: 500 }}>{r.name}</td>
+              <td style={{ fontWeight: 600 }}>{meta.sizeGiB as number || 0} GiB</td>
+              <td><code style={{ fontSize: '0.75rem', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>{r.type}</code></td>
+              <td><StateBadge state={r.state} /></td>
+              <td style={{ fontSize: '0.8rem' }}>{meta.attachedTo as string || <span style={{ color: '#ef4444', fontWeight: 500 }}>Unattached</span>}</td>
+              <td>{meta.encrypted ? <span style={{ color: '#16a34a' }}>Yes</span> : <span style={{ color: '#dc2626' }}>No</span>}</td>
+              <td>
+                {r.estimatedMonthlyCost > 0 ? (
+                  <div className="cost-bar-inline">
+                    <div className="cost-bar-inline-track">
+                      <div className="cost-bar-inline-fill" style={{ width: `${(r.estimatedMonthlyCost / maxCost) * 100}%` }} />
+                    </div>
+                    <span className="cost-bar-inline-value">${r.estimatedMonthlyCost.toFixed(2)}</span>
+                  </div>
+                ) : <span style={{ color: '#d1d5db' }}>—</span>}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function S3Table({ resources, onSelect }: { resources: Resource[]; onSelect: (r: Resource) => void }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Bucket Name</th>
+          <th>Region</th>
+          <th>Objects</th>
+          <th>Size</th>
+          <th>Versioning</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {resources.map(r => {
+          const meta = (r.metadata || {}) as Record<string, unknown>;
+          return (
+            <tr key={r.id} className="table-row-interactive" onClick={() => onSelect(r)}>
+              <td style={{ fontWeight: 500 }}>{r.name}</td>
+              <td><code style={{ fontSize: '0.75rem' }}>{meta.region as string || '—'}</code></td>
+              <td style={{ fontWeight: 600 }}>{((meta.objectCount as number) || 0).toLocaleString()}</td>
+              <td style={{ fontWeight: 500 }}>{meta.sizeMB ? `${(meta.sizeMB as number).toLocaleString()} MB` : '—'}</td>
+              <td>{meta.versioning === 'Enabled' ? <span style={{ color: '#16a34a' }}>Enabled</span> : <span style={{ color: '#6b7280' }}>Disabled</span>}</td>
+              <td style={{ fontSize: '0.8rem', color: '#6b7280' }}>{meta.creationDate ? new Date(meta.creationDate as string).toLocaleDateString() : '—'}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function RDSTable({ resources, onSelect, maxCost }: { resources: Resource[]; onSelect: (r: Resource) => void; maxCost: number }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Instance ID</th>
+          <th>Engine</th>
+          <th>Class</th>
+          <th>Storage</th>
+          <th>Multi-AZ</th>
+          <th>Status</th>
+          <th>Cost/mo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {resources.map(r => {
+          const meta = (r.metadata || {}) as Record<string, unknown>;
+          return (
+            <tr key={r.id} className="table-row-interactive" onClick={() => onSelect(r)}>
+              <td style={{ fontWeight: 500 }}>{r.name}</td>
+              <td><code style={{ fontSize: '0.75rem', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>{meta.engine as string} {meta.engineVersion as string || ''}</code></td>
+              <td><code style={{ fontSize: '0.75rem' }}>{r.type}</code></td>
+              <td style={{ fontWeight: 600 }}>{meta.allocatedStorageGiB as number || 0} GiB</td>
+              <td>{meta.multiAZ ? <span style={{ color: '#16a34a', fontWeight: 500 }}>Yes</span> : <span style={{ color: '#6b7280' }}>No</span>}</td>
+              <td><StateBadge state={r.state} /></td>
+              <td>
+                {r.estimatedMonthlyCost > 0 ? (
+                  <div className="cost-bar-inline">
+                    <div className="cost-bar-inline-track">
+                      <div className="cost-bar-inline-fill" style={{ width: `${(r.estimatedMonthlyCost / maxCost) * 100}%` }} />
+                    </div>
+                    <span className="cost-bar-inline-value">${r.estimatedMonthlyCost.toFixed(2)}</span>
+                  </div>
+                ) : <span style={{ color: '#d1d5db' }}>—</span>}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function LambdaTable({ resources, onSelect, maxCost }: { resources: Resource[]; onSelect: (r: Resource) => void; maxCost: number }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Function Name</th>
+          <th>Runtime</th>
+          <th>Memory</th>
+          <th>Timeout</th>
+          <th>Invocations/day</th>
+          <th>Avg Duration</th>
+          <th>Status</th>
+          <th>Cost/mo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {resources.map(r => {
+          const meta = (r.metadata || {}) as Record<string, unknown>;
+          const invocations = meta.avgInvocationsPerDay as number || 0;
+          const duration = meta.avgDurationMs as number || 0;
+          return (
+            <tr key={r.id} className="table-row-interactive" onClick={() => onSelect(r)}>
+              <td style={{ fontWeight: 500 }}>{r.name}</td>
+              <td><code style={{ fontSize: '0.75rem', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>{meta.runtime as string || '—'}</code></td>
+              <td style={{ fontWeight: 600 }}>{meta.memoryMB as number || 128} MB</td>
+              <td>{meta.timeoutSeconds as number || 3}s</td>
+              <td style={{ fontWeight: invocations > 0 ? 600 : 400, color: invocations === 0 ? '#ef4444' : '#374151' }}>
+                {invocations > 0 ? invocations.toLocaleString() : 'None'}
+              </td>
+              <td>{duration > 0 ? `${duration.toFixed(0)}ms` : '—'}</td>
+              <td><StateBadge state={r.state} /></td>
+              <td>
+                {r.estimatedMonthlyCost > 0 ? (
+                  <div className="cost-bar-inline">
+                    <div className="cost-bar-inline-track">
+                      <div className="cost-bar-inline-fill" style={{ width: `${(r.estimatedMonthlyCost / maxCost) * 100}%` }} />
+                    </div>
+                    <span className="cost-bar-inline-value">${r.estimatedMonthlyCost.toFixed(2)}</span>
+                  </div>
+                ) : <span style={{ color: '#d1d5db' }}>—</span>}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function ELBTable({ resources, onSelect, maxCost }: { resources: Resource[]; onSelect: (r: Resource) => void; maxCost: number }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Scheme</th>
+          <th>State</th>
+          <th>Targets</th>
+          <th>Requests/day</th>
+          <th>Cost/mo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {resources.map(r => {
+          const meta = (r.metadata || {}) as Record<string, unknown>;
+          const totalTargets = meta.totalTargetCount as number || 0;
+          const activeTargets = meta.activeTargetCount as number || 0;
+          const requests = meta.requestCountPerDay as number || 0;
+          return (
+            <tr key={r.id} className="table-row-interactive" onClick={() => onSelect(r)}>
+              <td style={{ fontWeight: 500 }}>{r.name}</td>
+              <td><code style={{ fontSize: '0.75rem', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>{r.type}</code></td>
+              <td style={{ fontSize: '0.8rem' }}>{meta.scheme as string || '—'}</td>
+              <td><StateBadge state={r.state} /></td>
+              <td style={{ fontWeight: totalTargets === 0 ? 500 : 400, color: totalTargets === 0 ? '#ef4444' : '#374151' }}>
+                {totalTargets > 0 ? `${activeTargets}/${totalTargets} healthy` : 'No targets'}
+              </td>
+              <td style={{ fontWeight: requests === 0 ? 500 : 400, color: requests === 0 ? '#f59e0b' : '#374151' }}>
+                {requests > 0 ? requests.toLocaleString() : 'None'}
+              </td>
+              <td>
+                {r.estimatedMonthlyCost > 0 ? (
+                  <div className="cost-bar-inline">
+                    <div className="cost-bar-inline-track">
+                      <div className="cost-bar-inline-fill" style={{ width: `${(r.estimatedMonthlyCost / maxCost) * 100}%` }} />
+                    </div>
+                    <span className="cost-bar-inline-value">${r.estimatedMonthlyCost.toFixed(2)}</span>
+                  </div>
+                ) : <span style={{ color: '#d1d5db' }}>—</span>}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function VPCTable({ resources, onSelect, maxCost }: { resources: Resource[]; onSelect: (r: Resource) => void; maxCost: number }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Resource ID</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Details</th>
+          <th>State</th>
+          <th>Cost/mo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {resources.map(r => {
+          const meta = (r.metadata || {}) as Record<string, unknown>;
+          let details = '';
+          if (r.type === 'VPC') details = meta.cidrBlock as string || '';
+          else if (r.type === 'Subnet') details = `${meta.cidrBlock || ''} (${meta.availabilityZone || ''})`;
+          else if (r.type === 'SecurityGroup') details = `${(meta.inboundRules as unknown[] || []).length} inbound rules`;
+          else if (r.type === 'ElasticIP') details = meta.publicIp as string || '';
+          else if (r.type === 'NATGateway') {
+            const dailyGB = (meta.dailyTrafficGB as number) || 0;
+            details = `${dailyGB.toFixed(2)} GB/day`;
+          }
+          return (
+            <tr key={r.id} className="table-row-interactive" onClick={() => onSelect(r)}>
+              <td><code style={{ fontSize: '0.75rem' }}>{r.resourceId}</code></td>
+              <td style={{ fontWeight: 500 }}>{r.name}</td>
+              <td><code style={{ fontSize: '0.75rem', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>{r.type}</code></td>
+              <td style={{ fontSize: '0.8rem', color: '#6b7280' }}>{details || '—'}</td>
+              <td><StateBadge state={r.state} /></td>
+              <td>
+                {r.estimatedMonthlyCost > 0 ? (
+                  <div className="cost-bar-inline">
+                    <div className="cost-bar-inline-track">
+                      <div className="cost-bar-inline-fill" style={{ width: `${(r.estimatedMonthlyCost / maxCost) * 100}%` }} />
+                    </div>
+                    <span className="cost-bar-inline-value">${r.estimatedMonthlyCost.toFixed(2)}</span>
+                  </div>
+                ) : <span style={{ color: '#d1d5db' }}>—</span>}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function GenericTable({ resources, onSelect, maxCost }: { resources: Resource[]; onSelect: (r: Resource) => void; maxCost: number }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>ID</th>
+          <th>Type</th>
+          <th>State</th>
+          <th>Cost/mo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {resources.map(r => (
+          <tr key={r.id} className="table-row-interactive" onClick={() => onSelect(r)}>
+            <td style={{ fontWeight: 500 }}>{r.name}</td>
+            <td><code style={{ fontSize: '0.75rem' }}>{r.resourceId}</code></td>
+            <td style={{ fontSize: '0.8rem' }}>{r.type}</td>
+            <td><StateBadge state={r.state} /></td>
+            <td>
+              {r.estimatedMonthlyCost > 0 ? (
+                <div className="cost-bar-inline">
+                  <div className="cost-bar-inline-track">
+                    <div className="cost-bar-inline-fill" style={{ width: `${(r.estimatedMonthlyCost / maxCost) * 100}%` }} />
+                  </div>
+                  <span className="cost-bar-inline-value">${r.estimatedMonthlyCost.toFixed(2)}</span>
+                </div>
+              ) : <span style={{ color: '#d1d5db' }}>—</span>}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// ─── Service Detail View ──────────────────────────────────────────────
+
+function ServiceDetailView({ service, resources, onSelect, onBack, searchQuery, onSearchChange }: {
+  service: string;
+  resources: Resource[];
+  onSelect: (r: Resource) => void;
+  onBack: () => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
+}) {
+  const color = SERVICE_COLORS[service] || '#6b7280';
+  const serviceResources = resources.filter(r => r.service === service);
+
+  // Filter by search
+  const filtered = searchQuery
+    ? serviceResources.filter(r =>
+        r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.resourceId.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : serviceResources;
+
+  const maxCost = Math.max(...filtered.map(r => r.estimatedMonthlyCost || 0), 0.01);
+  const totalCost = filtered.reduce((sum, r) => sum + (r.estimatedMonthlyCost || 0), 0);
+  const activeCount = filtered.filter(r =>
+    ['running', 'active', 'available', 'in-use', 'Active', 'Ready', 'associated', 'connected'].includes(r.state)
+  ).length;
+
+  // Service-specific stats
+  const getServiceStats = () => {
+    switch (service) {
+      case 'EC2': {
+        const types = filtered.reduce<Record<string, number>>((acc, r) => { acc[r.type] = (acc[r.type] || 0) + 1; return acc; }, {});
+        return { 'Instance Types': Object.entries(types).map(([t, c]) => `${t} (${c})`).slice(0, 3).join(', ') };
+      }
+      case 'EBS': {
+        const totalSize = filtered.reduce((sum, r) => sum + ((r.metadata as Record<string, unknown>)?.sizeGiB as number || 0), 0);
+        const unattached = filtered.filter(r => !(r.metadata as Record<string, unknown>)?.attachedTo).length;
+        return { 'Total Storage': `${totalSize} GiB`, 'Unattached': unattached };
+      }
+      case 'S3': {
+        const totalObjects = filtered.reduce((sum, r) => sum + ((r.metadata as Record<string, unknown>)?.objectCount as number || 0), 0);
+        const totalSize = filtered.reduce((sum, r) => sum + ((r.metadata as Record<string, unknown>)?.sizeMB as number || 0), 0);
+        return { 'Total Objects': totalObjects.toLocaleString(), 'Total Size': `${(totalSize / 1024).toFixed(2)} GB` };
+      }
+      case 'Lambda': {
+        const inactive = filtered.filter(r => r.state === 'inactive').length;
+        const avgMemory = filtered.length > 0 ? filtered.reduce((sum, r) => sum + ((r.metadata as Record<string, unknown>)?.memoryMB as number || 128), 0) / filtered.length : 0;
+        return { 'Inactive Functions': inactive, 'Avg Memory': `${avgMemory.toFixed(0)} MB` };
+      }
+      case 'ELB': {
+        const noTargets = filtered.filter(r => ((r.metadata as Record<string, unknown>)?.totalTargetCount as number || 0) === 0).length;
+        return { 'No Targets': noTargets };
+      }
+      default:
+        return {};
+    }
+  };
+
+  const stats = getServiceStats();
+
+  return (
+    <div>
+      {/* Breadcrumb */}
+      <div style={{ marginBottom: '1rem' }}>
+        <button
+          onClick={onBack}
+          className="btn btn-secondary btn-sm"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
+          ← Back to Services
+        </button>
+      </div>
+
+      {/* Service Header */}
+      <div className="card" style={{ borderLeft: `4px solid ${color}`, marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <ServiceBadge service={service} />
+              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>{SERVICE_LABELS[service] || service}</h2>
+            </div>
+            <p style={{ color: '#6b7280', margin: 0, fontSize: '0.85rem' }}>
+              {filtered.length} resources • {activeCount} active • ${totalCost.toFixed(2)}/mo
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {Object.entries(stats).map(([label, value]) => (
+              <div key={label} style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#374151' }}>{String(value)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="card" style={{ padding: '10px 14px', marginBottom: '1rem' }}>
+        <input
+          type="text"
+          placeholder={`Search ${SERVICE_LABELS[service] || service}...`}
+          value={searchQuery}
+          onChange={e => onSearchChange(e.target.value)}
+          style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }}
+        />
+      </div>
+
+      {/* Service-specific Table */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="table-container">
+          {service === 'EC2' && <EC2Table resources={filtered} onSelect={onSelect} maxCost={maxCost} />}
+          {service === 'EBS' && <EBSTable resources={filtered} onSelect={onSelect} maxCost={maxCost} />}
+          {service === 'S3' && <S3Table resources={filtered} onSelect={onSelect} />}
+          {service === 'RDS' && <RDSTable resources={filtered} onSelect={onSelect} maxCost={maxCost} />}
+          {service === 'Lambda' && <LambdaTable resources={filtered} onSelect={onSelect} maxCost={maxCost} />}
+          {service === 'ELB' && <ELBTable resources={filtered} onSelect={onSelect} maxCost={maxCost} />}
+          {service === 'VPC' && <VPCTable resources={filtered} onSelect={onSelect} maxCost={maxCost} />}
+          {!['EC2', 'EBS', 'S3', 'RDS', 'Lambda', 'ELB', 'VPC'].includes(service) && (
+            <GenericTable resources={filtered} onSelect={onSelect} maxCost={maxCost} />
+          )}
+        </div>
+        {filtered.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+            No resources found{searchQuery ? ' matching your search' : ''}.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Section: Resources Charts Header ─────────────────────────────────
+
+function ResourcesChartsHeader({ resources, costs }: { resources: Resource[]; costs: CostData | null }) {
   // Health data
   const healthMap: Record<string, number> = {};
   resources.forEach(r => {
@@ -453,7 +934,63 @@ function ResourcesDashboardHeader({ resources, costs }: { resources: Resource[];
     name, cost, fill: COST_COLORS[i % COST_COLORS.length],
   }));
 
-  // Service cards
+  return (
+    <div className="dashboard-grid-2" style={{ marginBottom: '1.25rem' }}>
+      <div className="chart-card">
+        <h3>Resource Health</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <ResponsiveContainer width="50%" height={180}>
+            <PieChart>
+              <Pie data={healthData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value">
+                {healthData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+              </Pie>
+              <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '0.82rem' }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {healthData.map(h => (
+              <div key={h.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+                <span className={`health-dot ${h.name.toLowerCase()}`} />
+                <span style={{ color: '#374151', fontWeight: 500 }}>{h.name}</span>
+                <span style={{ color: '#6b7280' }}>({h.value})</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {costBarData.length > 0 && (
+        <div className="chart-card">
+          <h3>Cost by Service</h3>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={costBarData} layout="vertical" margin={{ left: 0, right: 20, top: 5, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+              <XAxis type="number" tickFormatter={(v: number) => `$${v.toLocaleString()}`} fontSize={11} tick={{ fill: '#6b7280' }} />
+              <YAxis type="category" dataKey="name" width={70} fontSize={12} tick={{ fill: '#374151' }} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="cost" radius={[0, 6, 6, 0]} barSize={16}>
+                {costBarData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Section: Resources Overview ──────────────────────────────────────
+
+function ResourcesSection({ resources, total, onSelectResource, costs }: {
+  resources: Resource[];
+  total: number;
+  onSelectResource: (r: Resource) => void;
+  costs: CostData | null;
+}) {
+  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Group resources by service
   const serviceMap: Record<string, { count: number; active: number; cost: number }> = {};
   resources.forEach(r => {
     if (!serviceMap[r.service]) serviceMap[r.service] = { count: 0, active: 0, cost: 0 };
@@ -468,234 +1005,70 @@ function ResourcesDashboardHeader({ resources, costs }: { resources: Resource[];
     .filter(svc => serviceMap[svc])
     .map(svc => ({ name: svc, ...serviceMap[svc] }));
 
-  return (
-    <div style={{ marginBottom: '1.25rem' }}>
-      <div className="dashboard-grid-2">
-        <div className="chart-card">
-          <h3>Resource Health</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <ResponsiveContainer width="50%" height={180}>
-              <PieChart>
-                <Pie data={healthData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value">
-                  {healthData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '0.82rem' }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {healthData.map(h => (
-                <div key={h.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                  <span className={`health-dot ${h.name.toLowerCase()}`} />
-                  <span style={{ color: '#374151', fontWeight: 500 }}>{h.name}</span>
-                  <span style={{ color: '#6b7280' }}>({h.value})</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {costBarData.length > 0 && (
-          <div className="chart-card">
-            <h3>Cost by Service</h3>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={costBarData} layout="vertical" margin={{ left: 0, right: 20, top: 5, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                <XAxis type="number" tickFormatter={(v: number) => `$${v.toLocaleString()}`} fontSize={11} tick={{ fill: '#6b7280' }} />
-                <YAxis type="category" dataKey="name" width={70} fontSize={12} tick={{ fill: '#374151' }} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="cost" radius={[0, 6, 6, 0]} barSize={16}>
-                  {costBarData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
-
-      {serviceCards.length > 0 && (
-        <div className="service-cards-grid">
-          {serviceCards.map((svc, i) => {
-            const healthPct = svc.count > 0 ? (svc.active / svc.count) * 100 : 0;
-            const color = SERVICE_COLORS[svc.name] || '#6b7280';
-            return (
-              <div key={svc.name} className="service-card" style={{ animationDelay: `${i * 0.04}s`, borderTop: `3px solid ${color}` }}>
-                <div className="service-card-name">{SERVICE_LABELS[svc.name] || svc.name}</div>
-                <div className="service-card-count">{svc.count}</div>
-                {svc.cost > 0 && (
-                  <div className="service-card-cost">${svc.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</div>
-                )}
-                <div className="service-card-health">
-                  <div className="service-card-health-fill" style={{ width: `${healthPct}%` }} />
-                </div>
-                <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '2px' }}>{svc.active}/{svc.count} healthy</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Section: Resources by Service ────────────────────────────────────
-
-function ResourcesSection({ resources, total, onSelectResource, filters, onFilterChange, onLoadMore, costs }: {
-  resources: Resource[];
-  total: number;
-  onSelectResource: (r: Resource) => void;
-  filters: { service: string; q: string };
-  onFilterChange: (f: { service: string; q: string }) => void;
-  onLoadMore: () => void;
-  costs: CostData | null;
-}) {
-  const grouped = resources.reduce<Record<string, Resource[]>>((acc, r) => {
-    if (!acc[r.service]) acc[r.service] = [];
-    acc[r.service].push(r);
-    return acc;
-  }, {});
-
-  const sortedServices = Object.keys(grouped).sort(
-    (a, b) => (SERVICE_ORDER.indexOf(a) === -1 ? 999 : SERVICE_ORDER.indexOf(a)) -
-              (SERVICE_ORDER.indexOf(b) === -1 ? 999 : SERVICE_ORDER.indexOf(b))
-  );
-
-  const allServices = [...new Set(resources.map(r => r.service))].sort(
-    (a, b) => (SERVICE_ORDER.indexOf(a) === -1 ? 999 : SERVICE_ORDER.indexOf(a)) -
-              (SERVICE_ORDER.indexOf(b) === -1 ? 999 : SERVICE_ORDER.indexOf(b))
-  );
-
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  function toggle(svc: string) {
-    setExpanded(prev => { const n = new Set(prev); n.has(svc) ? n.delete(svc) : n.add(svc); return n; });
+  // If a service is selected, show the detail view
+  if (selectedService) {
+    return (
+      <ServiceDetailView
+        service={selectedService}
+        resources={resources}
+        onSelect={onSelectResource}
+        onBack={() => { setSelectedService(null); setSearchQuery(''); }}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+    );
   }
 
-  function getKeyDetail(r: Resource): string {
-    const meta = (r.metadata || {}) as Record<string, unknown>;
-    switch (r.service) {
-      case 'EC2': return [meta.privateIp && `IP: ${meta.privateIp}`, meta.vpcId && `VPC: ${meta.vpcId}`].filter(Boolean).join(' | ');
-      case 'EBS': return [meta.sizeGiB && `${meta.sizeGiB} GiB`, meta.encrypted && 'Encrypted', meta.attachedTo && `-> ${meta.attachedTo}`].filter(Boolean).join(' | ');
-      case 'S3': return [meta.objectCount && `${meta.objectCount} objs`, meta.sizeMB && `${meta.sizeMB} MB`, meta.region].filter(Boolean).join(' | ');
-      case 'RDS': return [meta.engine && `${meta.engine} ${meta.engineVersion || ''}`, meta.allocatedStorageGiB && `${meta.allocatedStorageGiB} GiB`, meta.multiAZ && 'Multi-AZ'].filter(Boolean).join(' | ');
-      case 'Lambda': return [meta.runtime, meta.memoryMB && `${meta.memoryMB} MB`].filter(Boolean).join(' | ');
-      case 'ELB': return [meta.scheme, meta.dnsName].filter(Boolean).join(' | ');
-      case 'VPC': {
-        if (r.type === 'VPC') return meta.cidrBlock ? `CIDR: ${meta.cidrBlock}` : '';
-        if (r.type === 'Subnet') return `${meta.cidrBlock || ''} (${meta.availabilityZone || ''})`;
-        if (r.type === 'SecurityGroup') { const rules = meta.inboundRules as unknown[]; return rules ? `${rules.length} inbound rules` : ''; }
-        if (r.type === 'ElasticIP') return `${meta.publicIp || ''}`;
-        return '';
-      }
-      case 'ElasticBeanstalk': return [meta.health && `Health: ${meta.health}`, meta.solutionStack && String(meta.solutionStack).split(' ').slice(0, 3).join(' ')].filter(Boolean).join(' | ');
-      case 'DynamoDB': return [meta.itemCount !== undefined && `${meta.itemCount} items`, meta.sizeMB && `${meta.sizeMB} MB`].filter(Boolean).join(' | ');
-      case 'Route53': return meta.recordCount ? `${meta.recordCount} records` : '';
-      case 'IAM': {
-        if (r.type === 'User' && meta.passwordLastUsed) return `Last login: ${new Date(meta.passwordLastUsed as string).toLocaleDateString()}`;
-        if (r.type === 'Policy' && meta.attachmentCount !== undefined) return `${meta.attachmentCount} attachments`;
-        return '';
-      }
-      case 'CloudFormation': return meta.driftStatus ? `Drift: ${meta.driftStatus}` : '';
-      case 'SQS': return meta.approximateMessages !== undefined ? `Messages: ${meta.approximateMessages}` : '';
-      default: return '';
-    }
-  }
-
+  // Otherwise show the services overview with charts + navigation cards
   return (
     <div>
-      <ResourcesDashboardHeader resources={resources} costs={costs} />
+      <ResourcesChartsHeader resources={resources} costs={costs} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>All Resources ({total})</h2>
-      </div>
-
-      {/* Filters */}
-      <div className="card" style={{ padding: '10px 14px', marginBottom: '12px' }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <input type="text" placeholder="Search resources..." value={filters.q}
-            onChange={e => onFilterChange({ ...filters, q: e.target.value })}
-            style={{ flex: 1, minWidth: '160px', padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
-          <select value={filters.service} onChange={e => onFilterChange({ ...filters, service: e.target.value })}
-            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }}>
-            <option value="">All Services</option>
-            {allServices.map(s => <option key={s} value={s}>{SERVICE_LABELS[s] || s}</option>)}
-          </select>
-        </div>
-      </div>
-
-      {/* Grouped cards */}
-      {sortedServices.map(service => {
-        const items = grouped[service];
-        const isExpanded = expanded.has(service) || sortedServices.length <= 3;
-        const color = SERVICE_COLORS[service] || '#6b7280';
-        const displayItems = isExpanded ? items : items.slice(0, 5);
-        const hasMore = items.length > 5 && !isExpanded;
-        const maxCost = Math.max(...items.map(r => r.estimatedMonthlyCost || 0), 0.01);
-
-        return (
-          <div key={service} className="card" style={{ marginBottom: '10px', borderLeft: `4px solid ${color}`, overflow: 'hidden', padding: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', cursor: 'pointer', background: `${color}06` }}
-              onClick={() => toggle(service)}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <ServiceBadge service={service} />
-                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{SERVICE_LABELS[service] || service}</span>
-                <span style={{ color: '#6b7280', fontSize: '0.78rem' }}>({items.length})</span>
-              </div>
-              <span style={{ color: '#9ca3af' }}>{isExpanded ? '▾' : '▸'}</span>
-            </div>
-            <div className="table-container">
-              <table style={{ marginBottom: 0 }}>
-                <thead>
-                  <tr>
-                    <th style={{ paddingLeft: '14px' }}>Name</th>
-                    <th>ID</th>
-                    <th>Type</th>
-                    <th>State</th>
-                    <th>Cost/mo</th>
-                    <th>Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayItems.map(r => (
-                    <tr key={r.id} className="table-row-interactive" onClick={() => onSelectResource(r)}>
-                      <td style={{ paddingLeft: '14px', fontWeight: 500, fontSize: '0.85rem' }}>{r.name}</td>
-                      <td><code style={{ fontSize: '0.72rem' }}>{r.resourceId}</code></td>
-                      <td style={{ fontSize: '0.78rem' }}>{r.type}</td>
-                      <td><StateBadge state={r.state} /></td>
-                      <td>
-                        {r.estimatedMonthlyCost > 0 ? (
-                          <div className="cost-bar-inline">
-                            <div className="cost-bar-inline-track">
-                              <div className="cost-bar-inline-fill" style={{ width: `${(r.estimatedMonthlyCost / maxCost) * 100}%` }} />
-                            </div>
-                            <span className="cost-bar-inline-value">${r.estimatedMonthlyCost.toFixed(2)}</span>
-                          </div>
-                        ) : (
-                          <span style={{ color: '#d1d5db', fontSize: '0.78rem' }}>—</span>
-                        )}
-                      </td>
-                      <td style={{ fontSize: '0.78rem', color: '#4b5563', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {getKeyDetail(r)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {hasMore && (
-                <div style={{ textAlign: 'center', padding: '6px', color: '#2563eb', cursor: 'pointer', fontSize: '0.82rem' }} onClick={() => toggle(service)}>
-                  Show all {items.length}...
+      <div className="service-nav-grid">
+        {serviceCards.map((svc, i) => {
+          const healthPct = svc.count > 0 ? (svc.active / svc.count) * 100 : 0;
+          const color = SERVICE_COLORS[svc.name] || '#6b7280';
+          const problemCount = svc.count - svc.active;
+          return (
+            <div
+              key={svc.name}
+              className="service-nav-card"
+              style={{ animationDelay: `${i * 0.04}s`, '--service-color': color } as React.CSSProperties}
+              onClick={() => setSelectedService(svc.name)}
+            >
+              <div className="service-nav-header">
+                <div className="service-nav-icon" style={{ background: `${color}15`, color }}>
+                  {svc.name === 'EC2' && '⬡'}
+                  {svc.name === 'EBS' && '◧'}
+                  {svc.name === 'S3' && '◉'}
+                  {svc.name === 'RDS' && '◎'}
+                  {svc.name === 'Lambda' && 'λ'}
+                  {svc.name === 'ELB' && '⇄'}
+                  {svc.name === 'VPC' && '◈'}
+                  {!['EC2', 'EBS', 'S3', 'RDS', 'Lambda', 'ELB', 'VPC'].includes(svc.name) && '●'}
                 </div>
-              )}
+                <div className="service-nav-arrow">→</div>
+              </div>
+              <div className="service-nav-name">{SERVICE_LABELS[svc.name] || svc.name}</div>
+              <div className="service-nav-stats">
+                <span className="service-nav-count">{svc.count} resources</span>
+                {problemCount > 0 && (
+                  <span className="service-nav-issues">{problemCount} issues</span>
+                )}
+              </div>
+              <div className="service-nav-footer">
+                <div className="service-nav-health">
+                  <div className="service-nav-health-fill" style={{ width: `${healthPct}%`, background: color }} />
+                </div>
+                {svc.cost > 0 && (
+                  <span className="service-nav-cost">${svc.cost.toFixed(2)}/mo</span>
+                )}
+              </div>
+              <div className="service-nav-cta">View Details</div>
             </div>
-          </div>
-        );
-      })}
-
-      {resources.length < total && (
-        <div style={{ textAlign: 'center', padding: '12px' }}>
-          <button className="btn btn-secondary" onClick={onLoadMore}>
-            Load more ({resources.length} of {total})
-          </button>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -886,11 +1259,9 @@ export default function ClientDashboard() {
   // Data
   const [resources, setResources] = useState<Resource[]>([]);
   const [resourceTotal, setResourceTotal] = useState(0);
-  const [resourcePage, setResourcePage] = useState(1);
   const [costs, setCosts] = useState<CostData | null>(null);
   const [recs, setRecs] = useState<RecommendationsResponse | null>(null);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
-  const [filters, setFilters] = useState({ service: '', q: '' });
 
   const loadWorkspace = useCallback(async () => {
     try {
@@ -907,14 +1278,14 @@ export default function ClientDashboard() {
     }
   }, []);
 
-  const loadData = useCallback(async (ws: Workspace, page: number, f: { service: string; q: string }, append = false) => {
+  const loadData = useCallback(async (ws: Workspace) => {
     try {
       const [invRes, costRes, recRes] = await Promise.all([
-        api.getInventory(ws.id, { page, perPage: 100, service: f.service || undefined, q: f.q || undefined }),
+        api.getInventory(ws.id, { page: 1, perPage: 500 }),
         api.getCosts(ws.id),
         api.getRecommendations(ws.id),
       ]);
-      setResources(prev => append ? [...prev, ...invRes.items] : invRes.items);
+      setResources(invRes.items);
       setResourceTotal(invRes.total);
       setCosts(costRes);
       setRecs(recRes);
@@ -927,10 +1298,9 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     if (workspace) {
-      setResourcePage(1);
-      loadData(workspace, 1, filters);
+      loadData(workspace);
     }
-  }, [workspace, filters, loadData]);
+  }, [workspace, loadData]);
 
   async function handleSync() {
     if (!workspace || syncing) return;
@@ -939,20 +1309,12 @@ export default function ClientDashboard() {
     try {
       const result = await api.syncResources(workspace.id);
       setSyncResult(result);
-      setResourcePage(1);
-      await loadData(workspace, 1, filters);
+      await loadData(workspace);
     } catch (err) {
       setSyncResult({ status: 'error', message: err instanceof Error ? err.message : 'Sync failed', total: 0, byService: {}, errors: [] });
     } finally {
       setSyncing(false);
     }
-  }
-
-  function handleLoadMore() {
-    if (!workspace) return;
-    const nextPage = resourcePage + 1;
-    setResourcePage(nextPage);
-    loadData(workspace, nextPage, filters, true);
   }
 
   // ── No workspace → show connect form
@@ -1052,7 +1414,7 @@ export default function ClientDashboard() {
                   const healthPct = count > 0 ? (activeCount / count) * 100 : 0;
                   return (
                     <div key={svc} className="service-card" style={{ animationDelay: `${i * 0.04}s`, borderTop: `3px solid ${color}`, cursor: 'pointer' }}
-                      onClick={() => { setFilters({ ...filters, service: svc }); setTab('resources'); }}>
+                      onClick={() => setTab('resources')}>
                       <div className="service-card-name">{SERVICE_LABELS[svc] || svc}</div>
                       <div className="service-card-count">{count}</div>
                       <div className="service-card-health">
@@ -1074,9 +1436,6 @@ export default function ClientDashboard() {
           resources={resources}
           total={resourceTotal}
           onSelectResource={setSelectedResource}
-          filters={filters}
-          onFilterChange={f => { setFilters(f); setResourcePage(1); }}
-          onLoadMore={handleLoadMore}
           costs={costs}
         />
       )}
