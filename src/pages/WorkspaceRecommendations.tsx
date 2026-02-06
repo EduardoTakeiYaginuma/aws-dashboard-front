@@ -101,7 +101,7 @@ export default function WorkspaceRecommendations() {
               <XAxis type="number" tickFormatter={(v: number) => `$${v.toLocaleString()}`} fontSize={11} tick={{ fill: '#6b7280' }} />
               <YAxis type="category" dataKey="name" width={110} fontSize={11} tick={{ fill: '#374151' }} />
               <Tooltip
-                formatter={(value: number) => [`$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Savings/mo']}
+                formatter={(value) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Savings/mo']}
                 contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '0.82rem' }}
               />
               <Bar dataKey="savings" radius={[0, 6, 6, 0]} barSize={18}>

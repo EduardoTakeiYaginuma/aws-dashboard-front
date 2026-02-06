@@ -360,7 +360,7 @@ function CostBreakdown({ costs }: { costs: CostData }) {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => [`$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Cost']}
+                formatter={(value) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Cost']}
                 contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '0.82rem' }}
               />
             </PieChart>
