@@ -7,6 +7,12 @@ const TYPE_LABELS: Record<string, string> = {
   EBS_ORPHAN: 'EBS Orphaned Volume',
   S3_LIFECYCLE: 'S3 Lifecycle Optimization',
   RDS_DOWN_SIZE: 'RDS Instance Downsizing',
+  LAMBDA_UNUSED: 'Lambda Unused Function',
+  LAMBDA_OVERSIZED: 'Lambda Oversized Memory',
+  ELB_NO_TARGETS: 'Load Balancer Without Targets',
+  ELB_NO_TRAFFIC: 'Load Balancer Without Traffic',
+  EIP_UNASSOCIATED: 'Elastic IP Unassociated',
+  NAT_GW_IDLE: 'NAT Gateway Idle',
 };
 
 export default function RecommendationDetail() {
@@ -42,6 +48,7 @@ export default function RecommendationDetail() {
   if (!rec) return <div className="error-msg">Recommendation not found</div>;
 
   const metadata = rec.metadata as Record<string, unknown> | null;
+  const annualSavings = rec.estimatedMonthlySavings * 12;
 
   return (
     <div>
@@ -53,27 +60,50 @@ export default function RecommendationDetail() {
         <p>Resource: <code>{rec.resourceId}</code></p>
       </div>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-label">Estimated Monthly Savings</div>
-          <div className="stat-value savings">${rec.estimatedMonthlySavings.toLocaleString()}/mo</div>
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+        <div className="stat-card-enhanced anim-delay-1" style={{ '--accent-gradient': 'linear-gradient(90deg, #059669, #34d399)' } as React.CSSProperties}>
+          <div className="stat-icon" style={{ '--icon-bg': '#ecfdf5', '--icon-color': '#059669' } as React.CSSProperties}>$</div>
+          <div className="stat-label">Monthly Savings</div>
+          <div className="stat-value savings">${rec.estimatedMonthlySavings.toLocaleString()}</div>
+          <div className="stat-subtitle">per month</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Annual Savings Potential</div>
-          <div className="stat-value savings">
-            ${(rec.estimatedMonthlySavings * 12).toLocaleString()}/yr
+        <div className="stat-card-enhanced anim-delay-2" style={{ '--accent-gradient': 'linear-gradient(90deg, #065f46, #059669)' } as React.CSSProperties}>
+          <div className="stat-icon" style={{ '--icon-bg': '#d1fae5', '--icon-color': '#065f46' } as React.CSSProperties}>$</div>
+          <div className="stat-label">Annual Potential</div>
+          <div className="stat-value savings">${annualSavings.toLocaleString()}</div>
+          <div className="stat-subtitle">per year</div>
+        </div>
+        <div className="stat-card-enhanced anim-delay-3" style={{ '--accent-gradient': `linear-gradient(90deg, ${rec.confidence === 'high' ? '#166534, #22c55e' : rec.confidence === 'medium' ? '#854d0e, #f59e0b' : '#991b1b, #ef4444'})` } as React.CSSProperties}>
+          <div className="stat-icon" style={{ '--icon-bg': rec.confidence === 'high' ? '#dcfce7' : rec.confidence === 'medium' ? '#fef3c7' : '#fee2e2', '--icon-color': rec.confidence === 'high' ? '#166534' : rec.confidence === 'medium' ? '#854d0e' : '#991b1b' } as React.CSSProperties}>
+            {rec.confidence === 'high' ? '✓' : rec.confidence === 'medium' ? '~' : '!'}
           </div>
-        </div>
-        <div className="stat-card">
           <div className="stat-label">Confidence</div>
           <div className="stat-value">
             <span className={`badge badge-${rec.confidence}`}>{rec.confidence}</span>
           </div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card-enhanced anim-delay-4" style={{ '--accent-gradient': `linear-gradient(90deg, ${rec.status === 'new' ? '#1d4ed8, #3b82f6' : rec.status === 'acknowledged' ? '#92400e, #f59e0b' : '#6b7280, #9ca3af'})` } as React.CSSProperties}>
+          <div className="stat-icon" style={{ '--icon-bg': rec.status === 'new' ? '#dbeafe' : rec.status === 'acknowledged' ? '#fef3c7' : '#f3f4f6', '--icon-color': rec.status === 'new' ? '#1d4ed8' : rec.status === 'acknowledged' ? '#92400e' : '#6b7280' } as React.CSSProperties}>
+            {rec.status === 'new' ? '●' : rec.status === 'acknowledged' ? '✓' : '✕'}
+          </div>
           <div className="stat-label">Status</div>
           <div className="stat-value">
             <span className={`badge badge-${rec.status}`}>{rec.status}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Annual savings callout */}
+      <div className="savings-banner" style={{ marginBottom: '1.25rem' }}>
+        <div className="savings-banner-content">
+          <div style={{ fontSize: '0.78rem', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: '4px' }}>
+            Annual Savings Opportunity
+          </div>
+          <div className="savings-amount">
+            ${annualSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/yr
+          </div>
+          <div className="savings-detail">
+            Based on ${rec.estimatedMonthlySavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo estimated savings
           </div>
         </div>
       </div>

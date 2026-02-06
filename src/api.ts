@@ -57,6 +57,42 @@ export interface CostData {
   currency: string;
 }
 
+export interface Resource {
+  id: string;
+  workspaceId: string;
+  resourceId: string;
+  arn?: string;
+  service: string;
+  type: string;
+  name: string;
+  tags: Record<string, string>;
+  state: string;
+  lastSeenAt: string;
+  estimatedMonthlyCost: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface SyncResult {
+  status: string;
+  message: string;
+  total: number;
+  byService: Record<string, number>;
+  errors: string[];
+}
+
+export interface InventoryResponse {
+  items: Resource[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
+export interface CostsSummary {
+    total: number;
+    byService: { service: string; cost: number }[];
+    byTag: { tag: string; cost: number }[];
+}
+
 export interface HealthResponse {
   status: string;
   timestamp: string;
@@ -104,4 +140,20 @@ export const api = {
 
   getCosts: (workspaceId: string) =>
     request<CostData>(`/workspaces/${workspaceId}/costs`),
+    
+  getInventory: (workspaceId: string, params: { page?: number, perPage?: number, service?: string, tag?: string, q?: string }) => {
+    const query = new URLSearchParams({ workspaceId });
+    if (params.page) query.set('page', params.page.toString());
+    if (params.perPage) query.set('perPage', params.perPage.toString());
+    if (params.service) query.set('service', params.service);
+    if (params.tag) query.set('tag', params.tag);
+    if (params.q) query.set('q', params.q);
+    return request<InventoryResponse>(`/inventory?${query.toString()}`);
+    },
+
+  getCostsSummary: (workspaceId: string) =>
+    request<CostsSummary>(`/costs/summary?workspaceId=${workspaceId}`),
+
+  syncResources: (workspaceId: string) =>
+    request<SyncResult>(`/workspaces/${workspaceId}/sync`, { method: 'POST' }),
 };

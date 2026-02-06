@@ -149,6 +149,9 @@ export default function Workspaces() {
                       <Link to={`/workspaces/${ws.id}/resources`} className="btn btn-sm btn-primary">
                         Resources
                       </Link>
+                      <Link to={`/workspaces/${ws.id}/explorer`} className="btn btn-sm btn-primary">
+                        Explorer
+                      </Link>
                       <Link to={`/workspaces/${ws.id}/diagram`} className="btn btn-sm btn-primary">
                         Diagram
                       </Link>
