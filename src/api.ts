@@ -2,11 +2,19 @@ const API_BASE = '/api';
 const AUTH_TOKEN = 'dev-token';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${AUTH_TOKEN}`,
+  };
+
+  // Only set Content-Type if there's a body
+  if (options.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${AUTH_TOKEN}`,
+      ...headers,
       ...options.headers,
     },
   });
